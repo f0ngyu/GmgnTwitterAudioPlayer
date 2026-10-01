@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
-const api = require('../lib/debot-signal');
+const api = require('../lib/debot-signal-content');
 function setup() {
     const played = [], submitted = [], completed = [], retried = [];
     const context = { GmgnDebotSignal: api, isCacheReady: true,

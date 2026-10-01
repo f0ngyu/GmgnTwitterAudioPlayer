@@ -108,7 +108,7 @@ node .\scripts\diagnostic-log-server.js
 ## 📋 更新日志
 
 ### 2026.10.1
-- **v1.22.0** — Debot AI 信号多链语音播报（fork 版本）
+- **v1.22.1** — 修复 Chrome 隔离世界信号解析器加载，恢复实时播报
 
 
 ### 2026.10.1
@@ -232,6 +232,13 @@ The offscreen permission is used solely to play local alert sounds and TTS for T
 
 ## 📝 详细商店发布文案 (Store Changelog)
 *(打包脚本 pack.py 会自动提取此段落并打印，方便直接复制到谷歌商店)*
+
+**v1.22.1**
+- 修复 Debot 信号解析器在 Chrome 隔离世界的加载，实时多链信号可进入语音队列
+
+**v1.22.0**
+- 新增 Debot AI 信号多链语音、独立开关、链筛选和最少钱包人数过滤
+- 仅播报页面订阅的新信号，按链和信号 ID 去重；使用钱包音色与音量
 
 **v1.21.0**
 👛 **Debot 钱包语音**
