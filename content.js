@@ -1153,6 +1153,8 @@ function syncInjectFilters() {
             wallet: configCache.enableWallet !== false,
             gmgn: configCache.enableGmgn !== false,
             debot: configCache.enableDebot === true,
+            aiSignal: configCache.enableAiSignal === true,
+            aiSignalChains: (configCache.aiSignalSettings || {}).chains || '',
             walletChains,
             blockedTokens,
             walletAddrs
@@ -2857,8 +2859,14 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
             channelToggleChanged = true;
             debugLog('🎚️ [GMGN 盯盘伴侣] enableTwitter →', configCache.enableTwitter);
         }
-        if ('enableAiSignal' in changes) configCache.enableAiSignal = changes.enableAiSignal.newValue === true;
-        if ('aiSignalSettings' in changes) configCache.aiSignalSettings = changes.aiSignalSettings.newValue || {};
+        if ('enableAiSignal' in changes) {
+            configCache.enableAiSignal = changes.enableAiSignal.newValue === true;
+            channelToggleChanged = true;
+        }
+        if ('aiSignalSettings' in changes) {
+            configCache.aiSignalSettings = changes.aiSignalSettings.newValue || {};
+            channelToggleChanged = true;
+        }
         if ('enableWallet' in changes) {
             configCache.enableWallet = changes.enableWallet.newValue !== false;
             channelToggleChanged = true;

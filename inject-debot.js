@@ -26,6 +26,9 @@
         walletAddrs: null
     };
 
+    let signalSubscriptions = null;
+    window.addEventListener('pagehide', () => { if (signalSubscriptions) signalSubscriptions.stop(); });
+
     window.addEventListener('GMGN_AUDIO_TOGGLE', function (e) {
         window.__GMGN_AUDIO_ENABLED = !!(e.detail && e.detail.enabled);
     });
@@ -79,6 +82,7 @@
         if (typeof d.twitter === 'boolean') window.__GMGN_ENABLE_TWITTER = d.twitter;
         if (typeof d.wallet === 'boolean') window.__GMGN_ENABLE_WALLET = d.wallet;
         if (typeof d.debot === 'boolean') window.__GMGN_ENABLE_DEBOT = d.debot;
+        if (signalSubscriptions) signalSubscriptions.configure(d);
     });
 
     function isSilentFollower() {
@@ -193,9 +197,19 @@
         return String(scriptURL || '').indexOf('sharedSocketWorker') !== -1;
     }
 
-    function wrapPort(port) {
+    function wrapPort(port, scriptURL, options) {
         if (!port || port.__gmgnDebotPortHooked) return;
         port.__gmgnDebotPortHooked = true;
+        const originalPostMessage = port.postMessage.bind(port);
+        port.postMessage = function (message, ...rest) {
+            const result = originalPostMessage(message, ...rest);
+            try {
+                if (signalSubscriptions) signalSubscriptions.observe(message, scriptURL, options);
+            } catch (error) {
+                debugLog('[GMGN 盯盘伴侣] AI 信号订阅初始化失败', error);
+            }
+            return result;
+        };
         let assignedOnMessage = null;
         try {
             Object.defineProperty(port, 'onmessage', {
@@ -225,12 +239,18 @@
     if (typeof window.SharedWorker === 'function' && !window.__DEBOT_ORIGINAL_SHARED_WORKER) {
         const OriginalSharedWorker = window.SharedWorker;
         window.__DEBOT_ORIGINAL_SHARED_WORKER = OriginalSharedWorker;
+        if (window.GmgnDebotSignalSubscription) {
+            signalSubscriptions = window.GmgnDebotSignalSubscription.createController(
+                (url, options) => options !== undefined ? new OriginalSharedWorker(url, options) : new OriginalSharedWorker(url),
+                emitSignal
+            );
+        }
         const HookedSharedWorker = function (scriptURL, options) {
             const worker = options !== undefined
                 ? new OriginalSharedWorker(scriptURL, options)
                 : new OriginalSharedWorker(scriptURL);
             try {
-                if (shouldHookSharedWorker(scriptURL, options)) wrapPort(worker.port);
+                if (shouldHookSharedWorker(scriptURL, options)) wrapPort(worker.port, scriptURL, options);
             } catch (error) {
                 // 包装失败不影响 Debot 自身连接
             }
