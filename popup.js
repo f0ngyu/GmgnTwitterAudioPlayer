@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadData() {
         chrome.storage.local.get([
             'twitterAudioMappings', 'customAudios', 'isMasterEnabled', 'enableTwitter', 'enableWallet',
-            'enableGmgn', 'enableDebot',
+            'enableGmgn', 'enableDebot', 'enableAiSignal', 'aiSignalSettings',
             'globalVolume', 'twitterVolume', 'walletVolume', 'eventFilters', 'playDefaultUnmapped',
             'playMappedGeneric', 'enableTTS', 'ttsVoice', 'ttsRate', 'ttsPitch', 'twitterTts', 'walletTts',
             'walletFilters', 'walletDictionary', 'blockedWsChannels', 'updateNotice',
@@ -638,6 +638,9 @@ document.addEventListener('DOMContentLoaded', () => {
             els.masterToggle.checked = result.isMasterEnabled !== false;
             els.enableTwitterToggle.checked = result.enableTwitter !== false;
             els.enableWalletToggle.checked = result.enableWallet !== false;
+            document.getElementById('enableAiSignalToggle').checked = result.enableAiSignal === true;
+            document.getElementById('aiSignalChains').value = (result.aiSignalSettings || {}).chains || '';
+            document.getElementById('aiSignalMinWallets').value = (result.aiSignalSettings || {}).minWallets || 0;
             let gmgnOn = result.enableGmgn !== false;
             let debotOn = result.enableDebot === true;
             if (gmgnOn && debotOn) {
@@ -1318,6 +1321,15 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast(on ? '钱包监控已开启' : '钱包监控已关闭');
         });
     });
+    document.getElementById('enableAiSignalToggle').addEventListener('change', e => {
+        chrome.storage.local.set({ enableAiSignal: e.target.checked });
+    });
+    const saveAiSignalSettings = () => chrome.storage.local.set({ aiSignalSettings: {
+        chains: document.getElementById('aiSignalChains').value.trim(),
+        minWallets: Math.max(0, Math.min(1000, Number(document.getElementById('aiSignalMinWallets').value) || 0))
+    } });
+    document.getElementById('aiSignalChains').addEventListener('change', saveAiSignalSettings);
+    document.getElementById('aiSignalMinWallets').addEventListener('change', saveAiSignalSettings);
     const persistPlatformToggles = (enableGmgn, enableDebot, toastText) => {
         const gmgnOn = enableGmgn === true;
         const debotOn = enableDebot === true;

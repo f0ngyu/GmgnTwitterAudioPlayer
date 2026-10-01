@@ -155,6 +155,15 @@
         });
     }
 
+    function emitSignal(input) {
+        if (window.__GMGN_ENABLE_DEBOT !== true || !window.__GMGN_AUDIO_ENABLED || isSilentFollower()) return;
+        const api = window.GmgnDebotSignal;
+        if (!api) return;
+        api.normalizeMessage(input).forEach(item => {
+            window.dispatchEvent(new CustomEvent('DEBOT_AI_SIGNAL', { detail: item }));
+        });
+    }
+
     function emitTwitter(result) {
         if (!result || !canEmitTwitter()) return;
         const api = window.GmgnDebotTwitter;
@@ -206,6 +215,7 @@
             const data = event && event.data;
             inspectAndEmit(data);
             emitWallet(data);
+            emitSignal(data);
             if (typeof assignedOnMessage === 'function') {
                 assignedOnMessage.call(port, event);
             }
@@ -276,7 +286,7 @@
             if (hookWallet) debugLog('🔗 [GMGN 盯盘伴侣 - Debot] 捕获钱包 WebSocket:', url);
             ws.addEventListener('message', function (event) {
                 if (typeof event.data !== 'string') return;
-                if (hookTwitter) inspectAndEmit(event.data);
+                if (hookTwitter) { inspectAndEmit(event.data); emitSignal(event.data); }
                 if (hookWallet) emitWallet(event.data);
             });
             return ws;

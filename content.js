@@ -4,6 +4,8 @@ let configCache = {
     enableWallet: true,
     enableGmgn: true,
     enableDebot: false,
+    enableAiSignal: false,
+    aiSignalSettings: {},
     playDefaultUnmapped: true,
     playMappedGeneric: true,
     enableTTS: true,
@@ -132,6 +134,7 @@ function deactivateInvalidExtensionContext(error) {
     }
     window.removeEventListener('TWITTER_WS_MSG_RECEIVED', handleTwitterMsg);
     window.removeEventListener('GMGN_WALLET_MSG', handleWalletMsg);
+    window.removeEventListener('DEBOT_AI_SIGNAL', handleAiSignal);
     try {
         audioSyncChannel.close();
     } catch (closeError) {
@@ -1053,6 +1056,8 @@ if (!OFFSCREEN_AUDIO_ONLY) {
         configCache.enableTwitter = result.enableTwitter !== false;
         configCache.enableWallet = result.enableWallet !== false;
         applyPlatformFlags(result.enableGmgn, result.enableDebot);
+        configCache.enableAiSignal = result.enableAiSignal === true;
+        configCache.aiSignalSettings = result.aiSignalSettings || {};
         configCache.globalVolume = result.globalVolume !== undefined ? result.globalVolume : 1.0;
         configCache.twitterVolume = result.twitterVolume !== undefined ? result.twitterVolume : (configCache.globalVolume || 1.0);
         configCache.walletVolume = result.walletVolume !== undefined ? result.walletVolume : (configCache.globalVolume || 1.0);
@@ -2000,6 +2005,10 @@ const DynamicPlaybackScheduler = {
             this._safetyTimer = null;
         }
 
+        if (aiSignalQueue.length && completedKind !== 'signal') {
+            startNextAiSignal();
+            return;
+        }
         const hasTwitter = TwitterBatch.hasContent();
         const hasWallet = WalletBatch.hasContent();
         const hasNextWallet = hasWallet;
@@ -2041,6 +2050,8 @@ const DynamicPlaybackScheduler = {
                 return;
             }
             playTwitterDirectly(ttsTriggers, coordinatorEventIds);
+        } else if (aiSignalQueue.length) {
+            startNextAiSignal();
         }
     }
 };
@@ -2570,7 +2581,7 @@ document.addEventListener('visibilitychange', () => {
             TabLeader.init();
         }
         try {
-            chrome.storage.local.get(['twitterAudioMappings', 'customAudios', 'defaultAudio', 'isMasterEnabled', 'enableTwitter', 'enableWallet', 'enableGmgn', 'enableDebot', 'globalVolume', 'twitterVolume', 'walletVolume', 'eventFilters', 'playDefaultUnmapped', 'playMappedGeneric', 'enableTTS', 'twitterTts', 'walletTts', 'walletFilters', 'walletDictionary', 'blockedWsChannels', 'debugLoggingEnabled'], async (result) => {
+            chrome.storage.local.get(['twitterAudioMappings', 'customAudios', 'defaultAudio', 'isMasterEnabled', 'enableTwitter', 'enableWallet', 'enableGmgn', 'enableDebot', 'enableAiSignal', 'aiSignalSettings', 'globalVolume', 'twitterVolume', 'walletVolume', 'eventFilters', 'playDefaultUnmapped', 'playMappedGeneric', 'enableTTS', 'twitterTts', 'walletTts', 'walletFilters', 'walletDictionary', 'blockedWsChannels', 'debugLoggingEnabled'], async (result) => {
                 if (chrome.runtime.lastError) return;
             if (result.twitterAudioMappings) configCache.mappings = result.twitterAudioMappings;
             configCache.defaultAudio = result.defaultAudio || 'sounds/default.MP3';
@@ -2670,7 +2681,7 @@ function convertBase64ToBlobUrl(customAudiosObj) {
     }
 }
 
-chrome.storage.local.get(['twitterAudioMappings', 'customAudios', 'defaultAudio', 'isMasterEnabled', 'enableTwitter', 'enableWallet', 'enableGmgn', 'enableDebot', 'globalVolume', 'twitterVolume', 'walletVolume', 'eventFilters', 'playDefaultUnmapped', 'playMappedGeneric', 'enableTTS', 'ttsVoice', 'ttsRate', 'ttsPitch', 'twitterTts', 'walletTts', 'walletFilters', 'walletDictionary', 'blockedWsChannels', 'debugLoggingEnabled'], async (result) => { // 🌟 数组加了高级定制选项+旧版字段用于迁移
+chrome.storage.local.get(['twitterAudioMappings', 'customAudios', 'defaultAudio', 'isMasterEnabled', 'enableTwitter', 'enableWallet', 'enableGmgn', 'enableDebot', 'enableAiSignal', 'aiSignalSettings', 'globalVolume', 'twitterVolume', 'walletVolume', 'eventFilters', 'playDefaultUnmapped', 'playMappedGeneric', 'enableTTS', 'ttsVoice', 'ttsRate', 'ttsPitch', 'twitterTts', 'walletTts', 'walletFilters', 'walletDictionary', 'blockedWsChannels', 'debugLoggingEnabled'], async (result) => { // 🌟 数组加了高级定制选项+旧版字段用于迁移
     if (result.twitterAudioMappings) configCache.mappings = result.twitterAudioMappings;
     if (result.defaultAudio) configCache.defaultAudio = result.defaultAudio;
     if (!configCache.defaultAudio) configCache.defaultAudio = 'sounds/default.MP3';
@@ -2679,6 +2690,8 @@ chrome.storage.local.get(['twitterAudioMappings', 'customAudios', 'defaultAudio'
     if (result.enableTwitter !== undefined) configCache.enableTwitter = result.enableTwitter !== false;
     if (result.enableWallet !== undefined) configCache.enableWallet = result.enableWallet !== false;
     applyPlatformFlags(result.enableGmgn, result.enableDebot);
+        configCache.enableAiSignal = result.enableAiSignal === true;
+        configCache.aiSignalSettings = result.aiSignalSettings || {};
     if (result.globalVolume !== undefined) configCache.globalVolume = result.globalVolume;
     if (result.twitterVolume !== undefined) configCache.twitterVolume = result.twitterVolume;
     if (result.walletVolume !== undefined) configCache.walletVolume = result.walletVolume;
@@ -2844,6 +2857,8 @@ chrome.storage.onChanged.addListener(async (changes, namespace) => {
             channelToggleChanged = true;
             debugLog('🎚️ [GMGN 盯盘伴侣] enableTwitter →', configCache.enableTwitter);
         }
+        if ('enableAiSignal' in changes) configCache.enableAiSignal = changes.enableAiSignal.newValue === true;
+        if ('aiSignalSettings' in changes) configCache.aiSignalSettings = changes.aiSignalSettings.newValue || {};
         if ('enableWallet' in changes) {
             configCache.enableWallet = changes.enableWallet.newValue !== false;
             channelToggleChanged = true;
@@ -4136,7 +4151,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return false;
     }
     if (msg.type !== 'GMGN_PROCESS_EVENT') return false;
-    if (msg.kind !== 'twitter' && msg.kind !== 'wallet') {
+    if (msg.kind !== 'twitter' && msg.kind !== 'wallet' && msg.kind !== 'signal') {
         sendResponse({ ok: false, error: 'invalid_event_kind' });
         return false;
     }
@@ -4144,7 +4159,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     // 收到派发即成为（或保持）Processor，并开启全量上报
     applyProcessorRole(true, msg.processorEpoch);
     applyCoordinatorRuntimeState(msg.runtimeState);
-    const processing = msg.kind === 'twitter'
+    const processing = msg.kind === 'signal'
+        ? Promise.resolve().then(() => handleAiSignal({ detail: msg.payload.item, __gmgnCoordinated: true, __gmgnEventId: msg.eventId }))
+        : msg.kind === 'twitter'
         ? Promise.resolve().then(() => handleTwitterMsg({
             detail: msg.payload || {},
             __gmgnCoordinated: true,
@@ -4189,3 +4206,42 @@ if (hasLiveExtensionContext()) {
         }
     });
 }
+
+// AI signals share the speech scheduler but never enter personal-wallet filtering.
+const aiSignalQueue = [];
+function handleAiSignal(e) {
+    const item = e && e.detail;
+    if (!isCacheReady || !configCache.isMasterEnabled || !isCurrentPlatformEnabled()
+        || getPagePlatform() !== 'debot' || !configCache.enableAiSignal
+        || !GmgnDebotSignal.allowed(item, configCache.aiSignalSettings)) return;
+    if (!e.__gmgnCoordinated) {
+        if (canSubmitMonitorEvents()) submitMonitorEvent('signal', 'debot_signal_' + item.chain + '_' + item.id, { item });
+        return;
+    }
+    const eventId = e.__gmgnEventId;
+    if (aiSignalQueue.some(entry => entry.eventId === eventId)) return;
+    markCoordinatorEventScheduled(eventId);
+    if (aiSignalQueue.length >= 50) {
+        notifyCoordinatorComplete([aiSignalQueue.shift().eventId]);
+    }
+    aiSignalQueue.push({ item, eventId });
+    if (!DynamicPlaybackScheduler._isPlaying) startNextAiSignal();
+}
+function startNextAiSignal() {
+    const entry = aiSignalQueue.shift();
+    if (!entry) return;
+    const scheduler = DynamicPlaybackScheduler;
+    scheduler._isPlaying = true;
+    scheduler._activeKind = 'signal';
+    scheduler._startSafetyTimer();
+    const finish = (result = { ok: true }) => {
+        if (result && result.ok === false) requestCoordinatorRetry([entry.eventId], result.error);
+        else notifyCoordinatorComplete([entry.eventId]);
+        scheduler.releaseAndNext();
+    };
+    if (!configCache.isMasterEnabled || !configCache.enableAiSignal || !isCurrentPlatformEnabled()
+        || !GmgnDebotSignal.allowed(entry.item, configCache.aiSignalSettings)) { finish(); return; }
+    diagnosticLog('ai_signal_play', { eventId: entry.eventId, chain: entry.item.chain, token: entry.item.symbol });
+    playNetworkTTS(GmgnDebotSignal.speech(entry.item), 'wallet', finish);
+}
+window.addEventListener('DEBOT_AI_SIGNAL', handleAiSignal);

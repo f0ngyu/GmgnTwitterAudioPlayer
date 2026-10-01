@@ -430,7 +430,7 @@ async function routeMonitorEvent(msg, sender) {
     if (registration.processorChanged) {
         await finalizeProcessorAssignment(true);
     }
-    if (!msg.eventId || (msg.kind !== 'twitter' && msg.kind !== 'wallet')) {
+    if (!msg.eventId || (msg.kind !== 'twitter' && msg.kind !== 'wallet' && msg.kind !== 'signal')) {
         return { ok: false, error: 'invalid_event' };
     }
     if (!isActionableMonitorEvent(msg.kind, msg.payload)) {
