@@ -107,6 +107,9 @@ node .\scripts\diagnostic-log-server.js
 
 ## 📋 更新日志
 
+### 2026.10.2
+- **v1.24.0** — 新增独立 AI 信号设置标签页，集中管理多链语音播报
+
 ### 2026.10.1
 - **v1.23.0** — Debot AI 信号独立订阅，切换代币、钱包等页面继续多链播报
 
@@ -235,6 +238,10 @@ The offscreen permission is used solely to play local alert sounds and TTS for T
 
 ## 📝 详细商店发布文案 (Store Changelog)
 *(打包脚本 pack.py 会自动提取此段落并打印，方便直接复制到谷歌商店)*
+
+**v1.24.0**
+- 新增 AI 信号标签页，集中设置播报开关、链筛选和最少聪明钱包人数
+- 补充登录、总开关、Debot 平台开关与钱包音色音量的使用说明
 
 **v1.23.0**
 - 开启 AI 信号后，扩展复用 Debot 登录连接，独立订阅选中的信号链

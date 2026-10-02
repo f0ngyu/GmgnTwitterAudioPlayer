@@ -909,6 +909,7 @@
     <div class="tabs">
         <button class="tab-btn active" data-tab="tab-twitter">🐦 推特监控</button>
         <button class="tab-btn" data-tab="tab-wallet">💰 钱包监控</button>
+        <button class="tab-btn" data-tab="tab-ai-signal">📡 AI 信号</button>
         <button class="tab-btn" data-tab="tab-settings">⚙️ 系统设置</button>
     </div>
 
@@ -1220,6 +1221,27 @@
         </div>
     </div>
     
+    <!-- AI 信号 Tab -->
+    <div id="tab-ai-signal" class="tab-content">
+        <div class="card"><div class="setting-block">
+                <h4>Debot AI 信号播报</h4>
+                <div class="setting-row">
+                    <div class="setting-row-text"><p class="setting-row-title">AI 信号语音（多链）</p>
+                    <p class="setting-row-hint">开启总开关与系统设置中的 Debot 后，播报新到达的 AI 信号</p></div>
+                    <label class="switch"><input type="checkbox" id="enableAiSignalToggle"><span class="slider"></span></label>
+                </div>
+                <label>播报链（逗号分隔，留空为全部）<input id="aiSignalChains" type="text" placeholder="bsc,sol,eth,base"></label>
+                <label>最少聪明钱包人数<input id="aiSignalMinWallets" type="number" min="0" max="1000" value="0"></label>
+                <p class="setting-foot">开启后在 Debot 各页面保持信号订阅；默认关闭，不补播历史列表</p>
+        </div></div>
+        <div class="card">
+            <h4>播报说明</h4>
+            <p class="setting-foot">保持 Debot 已登录标签页打开；切到 Debot 的代币、钱包等页面仍可接收。只播报新信号，不补播历史记录。</p>
+            <p class="setting-foot">音色、语速和音量沿用系统设置中的钱包播报配置。此板块控制语音，与独立的信号卡片插件分别设置。</p>
+            <p class="setting-foot">播报链示例：sol、bsc、eth、base；留空接收全部支持的链。最少钱包人数设为 0 时不限制。</p>
+        </div>
+    </div>
+
     <!-- 系统设置 Tab -->
     <div id="tab-settings" class="tab-content">
         <div class="card">
@@ -1252,15 +1274,6 @@
 
         <div class="card">
             <div class="setting-block">
-                <h4>Debot AI 信号播报</h4>
-                <div class="setting-row">
-                    <div class="setting-row-text"><p class="setting-row-title">AI 信号语音（多链）</p>
-                    <p class="setting-row-hint">只念新信号；使用钱包音色和音量，需要开启 Debot</p></div>
-                    <label class="switch"><input type="checkbox" id="enableAiSignalToggle"><span class="slider"></span></label>
-                </div>
-                <label>播报链（逗号分隔，留空为全部）<input id="aiSignalChains" type="text" placeholder="bsc,sol,eth,base"></label>
-                <label>最少聪明钱包人数<input id="aiSignalMinWallets" type="number" min="0" max="1000" value="0"></label>
-                <p class="setting-foot">开启后在 Debot 各页面保持信号订阅；默认关闭，不补播历史列表</p>
                 <h4>在哪些网站出声</h4>
                 <div class="setting-row">
                     <div class="setting-row-text">
